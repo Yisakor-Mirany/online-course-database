@@ -3,42 +3,21 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
-/**
- * File-backed implementation of the online course database. Loads course records from a
- * comma-separated file, encoding categorical fields as indexes into option lists derived from
- * the data itself.
- */
 public class OnlineCourseDatabase implements OnlineCourseDatabaseInterface {
 
-    /** column index, within a data row, of the experience level field */
     private final static int COL_EXPERIENCE_LEVEL = 1;
-    /** column index, within a data row, of the course type field */
     private final static int COL_COURSE_TYPE = 2;
-    /** column index, within a data row, of the platform field */
     private final static int COL_PLATFORM = 3;
-    /** column index, within a data row, of the completion status field */
     private final static int COL_COMPLETION_STATUS = 6;
-    /** column index, within a data row, of the dropout reason field */
     private final static int COL_DROPOUT_REASON = 8;
 
-    /** all course records managed by this database */
     private ArrayList<CourseData> courseData;
-    /** distinct experience level values, sorted alphabetically */
     private ArrayList<String> experienceLevelList;
-    /** distinct course type values, sorted alphabetically */
     private ArrayList<String> courseTypeList;
-    /** distinct platform values, sorted alphabetically */
     private ArrayList<String> platformList;
-    /** distinct completion status values, sorted alphabetically */
     private ArrayList<String> completionStatusList;
-    /** distinct dropout reason values, sorted alphabetically */
     private ArrayList<String> dropoutReasonList;
 
-    /**
-     * Constructor; loads course records from the specified file
-     * @param dbFile    comma-separated file containing a header row followed by course records;
-     *                  must not be null
-     */
     public OnlineCourseDatabase(File dbFile) {
         throwIfNull(dbFile, "dbFile");
 
@@ -52,15 +31,11 @@ public class OnlineCourseDatabase implements OnlineCourseDatabaseInterface {
         loadData(dbFile);
     }
 
-    /**
-     * Reads the specified file, populating the option lists and course records
-     * @param dbFile    comma-separated file containing a header row followed by course records
-     */
     private void loadData(File dbFile) {
         ArrayList<String[]> rawRows = new ArrayList<>();
 
         try (BufferedReader reader = new BufferedReader(new FileReader(dbFile))) {
-            String line = reader.readLine();  // discard header row
+            String line = reader.readLine();
             while ((line = reader.readLine()) != null) {
                 if (line.isBlank()) {
                     continue;
@@ -94,12 +69,6 @@ public class OnlineCourseDatabase implements OnlineCourseDatabaseInterface {
         }
     }
 
-    /**
-     * Inserts the specified value into the specified list in alphabetical (case-insensitive) order,
-     * if not already present
-     * @param list      list to insert into, assumed to already be sorted
-     * @param value     value to insert
-     */
     private static void insertSorted(ArrayList<String> list, String value) {
         if (list.contains(value)) {
             return;
@@ -111,11 +80,6 @@ public class OnlineCourseDatabase implements OnlineCourseDatabaseInterface {
         list.add(index, value);
     }
 
-    /**
-     * Copies the contents of the specified list into a new array
-     * @param list      list to copy
-     * @return          array containing the list's elements, in order
-     */
     private static String[] toArray(ArrayList<String> list) {
         String[] array = new String[list.size()];
         for (int i = 0; i < list.size(); i++) {
@@ -223,11 +187,6 @@ public class OnlineCourseDatabase implements OnlineCourseDatabaseInterface {
                 (double) satisfactionSum / count);
     }
 
-    /**
-     * Throws an exception if the specified object reference is null
-     * @param obj       object reference to check
-     * @param context   variable name, used to construct an exception message
-     */
     private static void throwIfNull(Object obj, String context) {
         if (obj == null) {
             throw new IllegalArgumentException(context + " must not be null");
