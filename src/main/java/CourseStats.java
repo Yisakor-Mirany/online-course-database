@@ -1,3 +1,12 @@
+/**
+ * Summary statistics calculated over a (possibly filtered) set of course records.
+ *
+ * @param recordCount          number of records the statistics were calculated over
+ * @param avgHrsPerWeek        average hours spent per week
+ * @param avgCourseDuration    average course duration, in weeks
+ * @param avgCompletionPercent average completion percentage
+ * @param avgSatisfactionScore average satisfaction score
+ */
 public record CourseStats(int recordCount,
                            double avgHrsPerWeek,
                            double avgCourseDuration,

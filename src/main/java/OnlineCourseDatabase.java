@@ -1,24 +1,46 @@
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.FileNotFoundException;
+import java.util.Iterator;
+import java.util.Scanner;
 
-public class OnlineCourseDatabase implements OnlineCourseDatabaseInterface {
+/**
+ * File-backed {@link OnlineCourseDatabaseInterface} implementation. Loads course records from a
+ * comma-separated file, encoding categorical fields as indexes into option lists derived from the
+ * data itself. Also iterable over its {@link CourseData} records.
+ */
+public class OnlineCourseDatabase implements OnlineCourseDatabaseInterface, Iterable<CourseData> {
 
+    /** column index, within a data row, of the experience level field */
     private final static int COL_EXPERIENCE_LEVEL = 1;
+    /** column index, within a data row, of the course type field */
     private final static int COL_COURSE_TYPE = 2;
+    /** column index, within a data row, of the platform field */
     private final static int COL_PLATFORM = 3;
+    /** column index, within a data row, of the completion status field */
     private final static int COL_COMPLETION_STATUS = 6;
+    /** column index, within a data row, of the dropout reason field */
     private final static int COL_DROPOUT_REASON = 8;
 
+    /** all course records managed by this database */
     private ArrayList<CourseData> courseData;
+    /** distinct experience level values, sorted alphabetically */
     private ArrayList<String> experienceLevelList;
+    /** distinct course type values, sorted alphabetically */
     private ArrayList<String> courseTypeList;
+    /** distinct platform values, sorted alphabetically */
     private ArrayList<String> platformList;
+    /** distinct completion status values, sorted alphabetically */
     private ArrayList<String> completionStatusList;
+    /** distinct dropout reason values, sorted alphabetically */
     private ArrayList<String> dropoutReasonList;
 
-    public OnlineCourseDatabase(File dbFile) {
+    /**
+     * Constructor; loads course records from the given file.
+     * @param dbFile comma-separated file containing a header row followed by course records;
+     *               must not be null
+     * @throws FileNotFoundException if dbFile does not exist or cannot be opened
+     */
+    public OnlineCourseDatabase(File dbFile) throws FileNotFoundException {
         throwIfNull(dbFile, "dbFile");
 
         courseData = new ArrayList<>();
@@ -31,15 +53,21 @@ public class OnlineCourseDatabase implements OnlineCourseDatabaseInterface {
         loadData(dbFile);
     }
 
-    private void loadData(File dbFile) {
+    /**
+     * Reads the given file, populating the option lists and course records.
+     * @param dbFile comma-separated file containing a header row followed by course records
+     * @throws FileNotFoundException if dbFile does not exist or cannot be opened
+     */
+    private void loadData(File dbFile) throws FileNotFoundException {
         ArrayList<String[]> rawRows = new ArrayList<>();
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(dbFile))) {
-            String line = reader.readLine();
-            while ((line = reader.readLine()) != null) {
-                if (line.isBlank()) {
-                    continue;
-                }
+        Scanner scanner = new Scanner(dbFile);
+        if (scanner.hasNextLine()) {
+            scanner.nextLine();
+        }
+        while (scanner.hasNextLine()) {
+            String line = scanner.nextLine();
+            if (!line.isBlank()) {
                 String[] fields = line.split(",");
                 rawRows.add(fields);
                 insertSorted(experienceLevelList, fields[COL_EXPERIENCE_LEVEL].trim());
@@ -48,9 +76,8 @@ public class OnlineCourseDatabase implements OnlineCourseDatabaseInterface {
                 insertSorted(completionStatusList, fields[COL_COMPLETION_STATUS].trim());
                 insertSorted(dropoutReasonList, fields[COL_DROPOUT_REASON].trim());
             }
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to read database file: " + dbFile, e);
         }
+        scanner.close();
 
         for (int i = 0; i < rawRows.size(); i++) {
             String[] f = rawRows.get(i);
@@ -69,6 +96,12 @@ public class OnlineCourseDatabase implements OnlineCourseDatabaseInterface {
         }
     }
 
+    /**
+     * Inserts the given value into the given list in alphabetical (case-insensitive) order,
+     * if not already present.
+     * @param list  list to insert into, assumed to already be sorted
+     * @param value value to insert
+     */
     private static void insertSorted(ArrayList<String> list, String value) {
         if (list.contains(value)) {
             return;
@@ -78,14 +111,6 @@ public class OnlineCourseDatabase implements OnlineCourseDatabaseInterface {
             index++;
         }
         list.add(index, value);
-    }
-
-    private static String[] toArray(ArrayList<String> list) {
-        String[] array = new String[list.size()];
-        for (int i = 0; i < list.size(); i++) {
-            array[i] = list.get(i);
-        }
-        return array;
     }
 
     @Override
@@ -116,27 +141,27 @@ public class OnlineCourseDatabase implements OnlineCourseDatabaseInterface {
 
     @Override
     public String[] getExperienceLevelOptions() {
-        return toArray(experienceLevelList);
+        return experienceLevelList.toArray(new String[0]);
     }
 
     @Override
     public String[] getCourseTypeOptions() {
-        return toArray(courseTypeList);
+        return courseTypeList.toArray(new String[0]);
     }
 
     @Override
     public String[] getPlatformOptions() {
-        return toArray(platformList);
+        return platformList.toArray(new String[0]);
     }
 
     @Override
     public String[] getCompletionStatusOptions() {
-        return toArray(completionStatusList);
+        return completionStatusList.toArray(new String[0]);
     }
 
     @Override
     public String[] getDropoutReasonOptions() {
-        return toArray(dropoutReasonList);
+        return dropoutReasonList.toArray(new String[0]);
     }
 
     @Override
@@ -153,27 +178,19 @@ public class OnlineCourseDatabase implements OnlineCourseDatabaseInterface {
 
         for (int i = 0; i < courseData.size(); i++) {
             CourseData c = courseData.get(i);
-            if (experienceLevelIndex != -1 && c.experienceLevel() != experienceLevelIndex) {
-                continue;
-            }
-            if (courseTypeIndex != -1 && c.courseType() != courseTypeIndex) {
-                continue;
-            }
-            if (platformIndex != -1 && c.platform() != platformIndex) {
-                continue;
-            }
-            if (completionStatusIndex != -1 && c.completionStatus() != completionStatusIndex) {
-                continue;
-            }
-            if (dropoutReasonIndex != -1 && c.dropoutReason() != dropoutReasonIndex) {
-                continue;
-            }
+            boolean matches = (experienceLevelIndex == -1 || c.experienceLevel() == experienceLevelIndex)
+                    && (courseTypeIndex == -1 || c.courseType() == courseTypeIndex)
+                    && (platformIndex == -1 || c.platform() == platformIndex)
+                    && (completionStatusIndex == -1 || c.completionStatus() == completionStatusIndex)
+                    && (dropoutReasonIndex == -1 || c.dropoutReason() == dropoutReasonIndex);
 
-            count++;
-            hoursSum += c.hoursPerWeek();
-            durationSum += c.courseDuration();
-            completionSum += c.completionPercentage();
-            satisfactionSum += c.satisfactionScore();
+            if (matches) {
+                count++;
+                hoursSum += c.hoursPerWeek();
+                durationSum += c.courseDuration();
+                completionSum += c.completionPercentage();
+                satisfactionSum += c.satisfactionScore();
+            }
         }
 
         if (count == 0) {
@@ -187,6 +204,16 @@ public class OnlineCourseDatabase implements OnlineCourseDatabaseInterface {
                 (double) satisfactionSum / count);
     }
 
+    @Override
+    public Iterator<CourseData> iterator() {
+        return courseData.iterator();
+    }
+
+    /**
+     * Throws an exception if the given object reference is null.
+     * @param obj     object reference to check
+     * @param context variable name, used to construct an exception message
+     */
     private static void throwIfNull(Object obj, String context) {
         if (obj == null) {
             throw new IllegalArgumentException(context + " must not be null");
