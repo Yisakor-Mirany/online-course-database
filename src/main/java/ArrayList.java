@@ -1,30 +1,29 @@
+import java.lang.reflect.Array;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * Custom, resizable generic list implementation backed by an array.
- * @param <E>   type of elements stored in the list
+ * Resizable, array-backed generic list.
+ * @param <E> type of elements stored in the list
  */
-public class ArrayList<E> {
+public class ArrayList<E> implements Iterable<E> {
 
-    /** default capacity used when none is specified */
+    /** capacity used when none is specified */
     private final static int DEFAULT_CAPACITY = 10;
 
-    /** backing array holding the list's elements */
+    /** backing array */
     private E[] elementData;
-    /** number of elements currently stored in the list */
+    /** number of elements currently stored */
     private int size;
 
-    /**
-     * Creates an empty list with a default initial capacity
-     */
+    /** Creates an empty list with the default capacity. */
     public ArrayList() {
         this(DEFAULT_CAPACITY);
     }
 
     /**
-     * Creates an empty list with the specified initial capacity
-     * @param capacity  initial capacity of the list; must not be negative
+     * Creates an empty list with the given initial capacity.
+     * @param capacity initial capacity; must not be negative
      */
     @SuppressWarnings("unchecked")
     public ArrayList(int capacity) {
@@ -36,27 +35,23 @@ public class ArrayList<E> {
     }
 
     /**
-     * Returns the number of elements in the list
-     * @return  number of elements in the list
+     * Returns the number of elements in the list.
+     * @return number of elements in the list
      */
     public int size() {
         return size;
     }
 
     /**
-     * Returns the element at the specified index
-     * @param index     index of the desired element
-     * @return          element at the specified index
+     * Returns the element at the given index.
+     * @param index index of the desired element
+     * @return element at the given index
      */
     public E get(int index) {
         checkIndex(index);
         return elementData[index];
     }
 
-    /**
-     * Returns a string representation of the list, e.g. "[a, b, c]"
-     * @return  string representation of the list
-     */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("[");
@@ -71,9 +66,9 @@ public class ArrayList<E> {
     }
 
     /**
-     * Returns the index of the first occurrence of the specified value
-     * @param value     value to search for
-     * @return          index of the first occurrence of value, or -1 if not found
+     * Returns the index of the first occurrence of the given value.
+     * @param value value to search for
+     * @return index of the first occurrence, or -1 if not found
      */
     public int indexOf(E value) {
         for (int i = 0; i < size; i++) {
@@ -85,25 +80,25 @@ public class ArrayList<E> {
     }
 
     /**
-     * Returns whether the list contains no elements
-     * @return  true if the list is empty, false otherwise
+     * Returns whether the list has no elements.
+     * @return true if the list is empty
      */
     public boolean isEmpty() {
         return size == 0;
     }
 
     /**
-     * Returns whether the list contains the specified value
-     * @param value     value to search for
-     * @return          true if the list contains value, false otherwise
+     * Returns whether the list contains the given value.
+     * @param value value to search for
+     * @return true if the list contains value
      */
     public boolean contains(E value) {
         return indexOf(value) != -1;
     }
 
     /**
-     * Appends the specified value to the end of the list
-     * @param value     value to add
+     * Appends the given value to the end of the list.
+     * @param value value to add
      */
     public void add(E value) {
         ensureCapacity(size + 1);
@@ -112,9 +107,9 @@ public class ArrayList<E> {
     }
 
     /**
-     * Inserts the specified value at the specified index, shifting subsequent elements to the right
-     * @param index     index at which to insert; must be between 0 and size (inclusive)
-     * @param value     value to insert
+     * Inserts the given value at the given index, shifting later elements right.
+     * @param index index to insert at; must be between 0 and size (inclusive)
+     * @param value value to insert
      */
     public void add(int index, E value) {
         if (index < 0 || index > size) {
@@ -129,8 +124,8 @@ public class ArrayList<E> {
     }
 
     /**
-     * Removes the element at the specified index, shifting subsequent elements to the left
-     * @param index     index of the element to remove
+     * Removes the element at the given index, shifting later elements left.
+     * @param index index of the element to remove
      */
     public void remove(int index) {
         checkIndex(index);
@@ -142,18 +137,16 @@ public class ArrayList<E> {
     }
 
     /**
-     * Replaces the element at the specified index with the specified value
-     * @param index     index of the element to replace
-     * @param value     new value to store at the specified index
+     * Replaces the element at the given index with the given value.
+     * @param index index of the element to replace
+     * @param value new value
      */
     public void set(int index, E value) {
         checkIndex(index);
         elementData[index] = value;
     }
 
-    /**
-     * Removes all elements from the list
-     */
+    /** Removes all elements from the list. */
     public void clear() {
         for (int i = 0; i < size; i++) {
             elementData[i] = null;
@@ -162,8 +155,8 @@ public class ArrayList<E> {
     }
 
     /**
-     * Appends all elements of the specified list to the end of this list, in order
-     * @param other     list whose elements are to be added; must not be null
+     * Appends all elements of the given list to the end of this list, in order.
+     * @param other list whose elements are added; must not be null
      */
     public void addAll(ArrayList<E> other) {
         if (other == null) {
@@ -174,18 +167,34 @@ public class ArrayList<E> {
         }
     }
 
-    /**
-     * Returns an iterator over the elements in the list, in order
-     * @return  iterator over the list's elements
-     */
+    @Override
     public Iterator<E> iterator() {
         return new ArrayListIterator();
     }
 
     /**
-     * Ensures that the backing array can hold at least the specified number of elements,
-     * growing it if necessary
-     * @param capacity  minimum capacity required
+     * Copies this list's elements into the given array, following the same contract as
+     * {@link java.util.Collection#toArray(Object[])}.
+     * @param target array to fill, or to use as a size/type template if too small
+     * @return array containing this list's elements
+     */
+    @SuppressWarnings("unchecked")
+    public E[] toArray(E[] target) {
+        if (target.length < size) {
+            target = (E[]) Array.newInstance(target.getClass().getComponentType(), size);
+        }
+        for (int i = 0; i < size; i++) {
+            target[i] = elementData[i];
+        }
+        if (target.length > size) {
+            target[size] = null;
+        }
+        return target;
+    }
+
+    /**
+     * Grows the backing array if needed so it can hold at least the given capacity.
+     * @param capacity minimum capacity required
      */
     @SuppressWarnings("unchecked")
     public void ensureCapacity(int capacity) {
@@ -200,8 +209,8 @@ public class ArrayList<E> {
     }
 
     /**
-     * Throws an exception if the specified index is not a valid index into the list
-     * @param index     index to check
+     * Throws an exception if the given index is not valid for this list.
+     * @param index index to check
      */
     public void checkIndex(int index) {
         if (index < 0 || index >= size) {
@@ -209,9 +218,7 @@ public class ArrayList<E> {
         }
     }
 
-    /**
-     * Iterator implementation over the elements of the enclosing list
-     */
+    /** Iterator over the elements of the enclosing list. */
     private class ArrayListIterator implements Iterator<E> {
 
         /** index of the element that will be returned by the next call to next() */
@@ -219,9 +226,7 @@ public class ArrayList<E> {
         /** whether remove() may currently be called */
         private boolean removeOK;
 
-        /**
-         * Creates an iterator positioned before the first element of the list
-         */
+        /** Creates an iterator positioned before the first element. */
         public ArrayListIterator() {
             position = 0;
             removeOK = false;
